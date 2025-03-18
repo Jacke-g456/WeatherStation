@@ -1,9 +1,14 @@
+
+#include <rom/rtc.h> 
 #include <math.h>  // https://www.tutorialspoint.com/c_standard_library/math_h.htm 
 #include <ctype.h>
 
 // ADD YOUR IMPORTS HERE
 #include <PubSubClient.h>
 
+#ifndef _WIFI_H 
+#include <WiFi.h>
+#endif
 
 
 #ifndef STDLIB_H
@@ -32,6 +37,8 @@
 #include <SPI.h>
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341.h"
+
+//############### IMPORT HEADER FILES ##################
 
 // Temperature sennsor constants
 #define DHTpin 27
@@ -78,12 +85,52 @@ double calcHeatIndex(double Temp, double Humid);
 /* Init class Instances for the DHT22 etcc */
 DHT dht(DHTpin, DHTTYPE);
 
+
+// background
 void drawGradientBackground() {
   for (int y = 0; y < tft.height(); y++) {
     uint16_t color = tft.color565(0, y / 2, 255 - (y / 2)); // Blue gradient
     tft.drawFastHLine(0, y, tft.width(), color);
   }
 }
+
+// MQTT CLIENT CONFIG  
+static const char* pubtopic       = "620165845";                    // Add your ID number here
+static const char* subtopic[]     = {"620165845_sub","/elet2415"};  // Array of Topics(Strings) to subscribe to
+static const char* mqtt_server    = "www.yanacreations.com";                // Broker IP address or Domain name as a String 
+static uint16_t mqtt_port         = 1883;
+
+// WIFI CREDENTIALS
+const char* ssid                  = "iPhone (8)"; // Add your Wi-Fi ssid
+const char* password              = "Steviecool-16"; // Add your Wi-Fi password 
+
+// TASK HANDLES 
+TaskHandle_t xMQTT_Connect          = NULL; 
+TaskHandle_t xNTPHandle             = NULL;  
+TaskHandle_t xLOOPHandle            = NULL;  
+TaskHandle_t xUpdateHandle          = NULL;
+TaskHandle_t xButtonCheckeHandle    = NULL; 
+
+// FUNCTION DECLARATION   
+void checkHEAP(const char* Name);   // RETURN REMAINING HEAP SIZE FOR A TASK
+void initMQTT(void);                // CONFIG AND INITIALIZE MQTT PROTOCOL
+unsigned long getTimeStamp(void);   // GET 10 DIGIT TIMESTAMP FOR CURRENT TIME
+void callback(char* topic, byte* payload, unsigned int length);
+void initialize(void);
+bool publish(const char *topic, const char *payload); // PUBLISH MQTT MESSAGE(PAYLOAD) TO A TOPIC
+void vButtonCheck( void * pvParameters );
+void vUpdate( void * pvParameters ); 
+void GDP(void);   // GENERATE DISPLAY PUBLISH
+
+#ifndef NTP_H
+#include "NTP.h"
+#endif
+
+#ifndef MQTT_H
+#include "mqtt.h"
+#endif
+
+
 
 void setup() {
   // put your setup code here, to run once:
@@ -107,6 +154,7 @@ void setup() {
   tft.print("Weather Station");
   tft.fillRect(30, 30, 180, 3, ILI9341_WHITE);
 
+  initialize();
 
 
 }
@@ -187,7 +235,88 @@ void loop() {
 
   Serial.println("-------------------");
   delay(2000); // Wait 2 seconds between readings
+
+   vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
+
+void vUpdate( void * pvParameters )  {
+    configASSERT( ( ( uint32_t ) pvParameters ) == 1 );    
+           
+    for( ;; ) {
+      if (isNumber(tft_temp)){
+          // Task code goes here.   
+          // PUBLISH to topic every second.
+          JsonDocument doc; // Create JSon object
+          char message[1100]  = {0};
+          //tft_temp, tft_humidity, tft_heatindex, tft_pressure, tft_altitude;
+          // Add key:value pairs to JSon object
+          doc["id"]         = "620165845";
+          doc["timestamp"]  = getTimeStamp();
+          doc["temperature"] = tft_temp;
+          doc["humidity"] = tft_humidity;
+          doc["heatindex"] = tft_heatindex;
+          doc["pressure"] = tft_pressure;
+          doc["altitude"] = tft_altitude;
+          doc["moisture"] = tft_moisture;
+
+          serializeJson(doc, message);  // Seralize / Covert JSon object to JSon string and store in char* array
+
+          if(mqtt.connected() ){
+            publish(pubtopic, message);
+          }
+    }
+            
+        vTaskDelay(1000 / portTICK_PERIOD_MS);  
+    }
+}
+
+unsigned long getTimeStamp(void) {
+          // RETURNS 10 DIGIT TIMESTAMP REPRESENTING CURRENT TIME
+          time_t now;         
+          time(&now); // Retrieve time[Timestamp] from system and save to &now variable
+          return now;
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  // ############## MQTT CALLBACK  ######################################
+  // RUNS WHENEVER A MESSAGE IS RECEIVED ON A TOPIC SUBSCRIBED TO
+  
+  Serial.printf("\nMessage received : ( topic: %s ) \n",topic ); 
+  char *received = new char[length + 1] {0}; 
+  
+  for (int i = 0; i < length; i++) { 
+    received[i] = (char)payload[i];    
+  }
+
+  // PRINT RECEIVED MESSAGE
+  Serial.printf("Payload : %s \n",received);
+
+}
+
+bool publish(const char *topic, const char *payload){   
+     bool res = false;
+     try{
+        res = mqtt.publish(topic,payload);
+        // Serial.printf("\nres : %d\n",res);
+        if(!res){
+          res = false;
+          throw false;
+        }
+     }
+     catch(...){
+      Serial.printf("\nError (%d) >> Unable to publish message\n", res);
+     }
+  return res;
+}
+
+
+bool isNumber(double number){       
+        char item[20];
+        snprintf(item, sizeof(item), "%f\n", number);
+        if( isdigit(item[0]) )
+          return true;
+        return false; 
+} 
 
 
 void Display_temp(double temp){
