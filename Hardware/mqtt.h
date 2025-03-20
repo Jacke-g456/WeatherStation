@@ -194,7 +194,7 @@ void initialize(void){
   Serial.println("\n\n***** Wi-Fi CONNECTED! *****\n\n");
    
   initMQTT();          // INIT MQTT  
-  // vUpdateFunction();
+  vUpdateFunction();
   vNTPFunction();     // INIT NTP PROTOCOL FOR TIME KEEPING  
   
 }

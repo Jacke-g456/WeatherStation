@@ -209,32 +209,7 @@ void loop() {
 
 
   
-  Serial.print("Air temperature: ");
-  Serial.print(temp);
-  Serial.println(" °C");
   
-  Serial.print("Heat Index: ");
-  Serial.print(heatindex);
-  Serial.println(" °C");
-  
-  Serial.print("Humidity: ");
-  Serial.print(humidity);
-  Serial.println(" %");
-  
-  Serial.print("Air pressure: ");
-  Serial.print(pressure);
-  Serial.println(" kPa");
-  
-  Serial.print("Altitude: ");
-  Serial.print(altitude);
-  Serial.println(" m");
-
-  Serial.print("Soil Moisture: ");
-  Serial.print(moisture);
-  Serial.println(" %");
-
-  Serial.println("-------------------");
-  delay(2000); // Wait 2 seconds between readings
 
    vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
@@ -243,6 +218,32 @@ void vUpdate( void * pvParameters )  {
     configASSERT( ( ( uint32_t ) pvParameters ) == 1 );    
            
     for( ;; ) {
+     /* Serial.print("Air temperature: ");
+  Serial.print(tft_temp);
+  Serial.println(" °C");
+  
+  Serial.print("Heat Index: ");
+  Serial.print(tft_heatindex);
+  Serial.println(" °C");
+  
+  Serial.print("Humidity: ");
+  Serial.print(tft_humidity);
+  Serial.println(" %");
+  
+  Serial.print("Air pressure: ");
+  Serial.print(tft_pressure);
+  Serial.println(" kPa");
+  
+  Serial.print("Altitude: ");
+  Serial.print(tft_altitude);
+  Serial.println(" m");
+
+  Serial.print("Soil Moisture: ");
+  Serial.print(tft_moisture);
+  Serial.println(" %");
+
+  Serial.println("-------------------");*/
+  delay(2000); // Wait 2 seconds between readings
       if (isNumber(tft_temp)){
           // Task code goes here.   
           // PUBLISH to topic every second.

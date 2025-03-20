@@ -46,7 +46,74 @@ def update_weather():
 
         except Exception as e:   
             print(f"update_radar Error: f{str(e)}")
-    return jsonify({"status": "failed", "data": "failed"})   
+    return jsonify({"status": "failed", "data": "failed"})  
+
+
+@app.route('/api/weather/get/<start>/<end>', methods=['GET']) 
+def get_all(start,end):   
+    '''RETURNS ALL THE DATA FROM THE DATABASE THAT EXIST IN BETWEEN THE START AND END TIMESTAMPS'''
+   
+    if request.method == "GET":
+        '''Add your code here to complete this route'''
+
+        try:
+            begin=escape(start)
+            stop=escape(end)
+            all=mongo.getAllInRange(begin,stop)
+            print(all)
+            if all:
+                return jsonify({"status":"found","data": all}) 
+
+        except Exception as e: 
+            print(f"get_all error: f{str(e)}")    
+
+    # FILE DATA NOT EXIST
+    return jsonify({"status":"not found","data":[]})
+
+@app.route('/api/mmar/temperature/<start>/<end>', methods=['GET']) 
+def get_temperature_mmar(start,end):   
+    '''RETURNS MIN, MAX, AVG AND RANGE FOR TEMPERATURE. THAT FALLS WITHIN THE START AND END DATE RANGE'''
+   
+    if request.method == "GET": 
+        '''Add your code here to complete this route'''
+        try:
+            begin=escape(start)
+            stop=escape(end)
+            temp_mmar=mongo.temperatureMMAR(begin,stop)
+            if temp_mmar:
+                return jsonify({"status":"found","data": temp_mmar}) 
+
+        except Exception as e: 
+            print(f"get_temperature_mmar error: f{str(e)}")    
+
+
+    # FILE DATA NOT EXIST
+    return jsonify({"status":"not found","data":[]})
+
+
+
+
+
+@app.route('/api/mmar/humidity/<start>/<end>', methods=['GET']) 
+def get_humidity_mmar(start,end):   
+    '''RETURNS MIN, MAX, AVG AND RANGE FOR HUMIDITY. THAT FALLS WITHIN THE START AND END DATE RANGE'''
+   
+    if request.method == "GET": 
+        '''Add your code here to complete this route'''
+        try:
+            begin=escape(start)
+            stop=escape(end)
+            humid_mmar=mongo.humidityMMAR(begin,stop)
+            if humid_mmar:
+                return jsonify({"status":"found","data": humid_mmar}) 
+
+        except Exception as e: 
+            print(f"get_hummidity_mmar error: f{str(e)}")    
+
+        
+
+    # FILE DATA NOT EXIST
+    return jsonify({"status":"not found","data":[]})
 
 @app.route('/api/file/get/<filename>', methods=['GET']) 
 def get_images(filename):   
@@ -62,6 +129,20 @@ def get_images(filename):
         
         # FILE DOES NOT EXIST
         return jsonify({"status":"file not found"}), 404
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 @app.route('/api/file/upload',methods=["POST"])  
