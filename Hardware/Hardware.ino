@@ -41,7 +41,7 @@
 //############### IMPORT HEADER FILES ##################
 
 // Temperature sennsor constants
-#define DHTpin 27
+#define DHTpin 4
 #define DHTTYPE DHT22
 
 
@@ -75,7 +75,8 @@ void Display_alt(double alt) ; // displays altitude on the TFT
 void Display_pressure(double pressure) ; // displays air pressure on the TFT
 void Display_moist(int moist) ; // displays soil moisture on the TFT
 
-
+bool is_Far=false;
+#define btn1 33
 
 // Temperature sennsor functions
 double convert_Celsius_to_fahrenheit(double c);
@@ -153,8 +154,10 @@ void setup() {
   tft.setCursor(30, 10);
   tft.print("Weather Station");
   tft.fillRect(30, 30, 180, 3, ILI9341_WHITE);
+  pinMode(btn1, INPUT_PULLUP);
 
   initialize();
+  vButtonCheckFunction();
 
 
 }
@@ -271,6 +274,23 @@ void vUpdate( void * pvParameters )  {
     }
 }
 
+
+void vButtonCheck( void * pvParameters )  {
+    configASSERT( ( ( uint32_t ) pvParameters ) == 1 );     
+      
+    for( ;; ) {
+        // Add code here to check if a button(S) is pressed
+        if (digitalRead( btn1) == LOW){
+          // then execute appropriate function if a button is pressed
+          is_Far=!is_Far;
+
+        }
+          
+
+        vTaskDelay(200 / portTICK_PERIOD_MS);  
+    }
+}
+
 unsigned long getTimeStamp(void) {
           // RETURNS 10 DIGIT TIMESTAMP REPRESENTING CURRENT TIME
           time_t now;         
@@ -324,10 +344,18 @@ void Display_temp(double temp){
   tft.setTextColor(ILI9341_RED, ILI9341_BLACK);
   tft.setCursor(0, 60);
   tft.print("Air Temp:");
+  if (is_Far==true){
+    tft.print(convert_Celsius_to_fahrenheit(temp));
+    tft.print(" "); 
+    tft.print((char)247); 
+    tft.print("F");
+    
+  }
+  else {
   tft.print(temp);
   tft.print(" "); 
   tft.print((char)247); 
-  tft.print("C");
+  tft.print("C");}
 }
 void Display_humid(double humid){
   tft.setTextColor(ILI9341_GREEN, ILI9341_BLACK);
@@ -341,10 +369,20 @@ void Display_heatindex(double index){
   tft.setTextColor(ILI9341_BLUE, ILI9341_BLACK);
   tft.setCursor(0, 100);
   tft.print("Heat Index:");
+  if (is_Far==true){
+    tft.print(convert_Celsius_to_fahrenheit(index));
+    tft.print(" "); 
+    tft.print((char)247); 
+    tft.print("F");
+    
+  }
+  else {
   tft.print(index);
-  tft.print(" ");
+  tft.print(" "); 
   tft.print((char)247); 
-  tft.print("C");
+  tft.print("C");}
+
+  
 }
 void Display_pressure(double pressure){
   tft.setTextColor(ILI9341_YELLOW, ILI9341_BLACK);
